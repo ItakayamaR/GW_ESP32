@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "time.h": "c",
+        "loragw_debug.h": "c",
+        "stdio.h": "c",
+        "sstream": "c",
+        "loragw_spi.h": "c"
+    }
+}
