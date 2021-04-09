@@ -31,7 +31,6 @@ Maintainer: Sylvain Miermont
 
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */
-
 #if DEBUG_AUX == 1
     #define DEBUG_MSG(str)                Serial.print(str)
     #define DEBUG_PRINTF(fmt, args...)    {\

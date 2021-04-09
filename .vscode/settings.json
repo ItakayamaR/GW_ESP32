@@ -4,6 +4,8 @@
         "loragw_debug.h": "c",
         "stdio.h": "c",
         "sstream": "c",
-        "loragw_spi.h": "c"
+        "loragw_spi.h": "c",
+        "spi.h": "c",
+        "ctype.h": "c"
     }
 }

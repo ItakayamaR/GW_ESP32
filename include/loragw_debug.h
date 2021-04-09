@@ -10,5 +10,4 @@
 #define DEBUG_REG 1
 #define DEBUG_HAL 1
 
-
-extern char debug_msg[100];
+static char debug_msg[100];
