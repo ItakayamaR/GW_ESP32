@@ -38,7 +38,7 @@ const lgw_conf_rxrf_s rfconf[2]  {
     }
 };
 
-const lgw_conf_rxif_s ifconfig[10] {
+const lgw_conf_rxif_s ifconf[10] {
     { //chan_multiSF_0
     .enable=true,                       /*!> enable or disable that IF chain */
     .rf_chain=0,                        /*!> to which RF chain is that IF chain associated */
@@ -172,114 +172,65 @@ int parse_SX1301_configuration(const char * conf_file) {
 
     /* set configuration for LoRa multi-SF channels (bandwidth cannot be set) */
     for (i = 0; i < LGW_MULTI_NB; ++i) {
-        memset(&ifconf, 0, sizeof(ifconf)); /* initialize configuration structure */
-        sprintf(param_name, "chan_multiSF_%i", i); /* compose parameter path inside JSON structure */
-        val = json_object_get_value(conf, param_name); /* fetch value (if possible) */
-        if (json_value_get_type(val) != JSONObject) {
-            MSG("INFO: no configuration for LoRa multi-SF channel %i\n", i);
-            continue;
-        }
         /* there is an object to configure that LoRa multi-SF channel, let's parse it */
-        sprintf(param_name, "chan_multiSF_%i.enable", i);
-        val = json_object_dotget_value(conf, param_name);
-        if (json_value_get_type(val) == JSONBoolean) {
-            ifconf.enable = (bool)json_value_get_boolean(val);
-        } else {
-            ifconf.enable = false;
-        }
-        if (ifconf.enable == false) { /* LoRa multi-SF channel disabled, nothing else to parse */
+        if (ifconf[i].enable == false) { /* LoRa multi-SF channel disabled, nothing else to parse */
             MSG("INFO: LoRa multi-SF channel %i disabled\n", i);
         } else  { /* LoRa multi-SF channel enabled, will parse the other parameters */
-            sprintf(param_name, "chan_multiSF_%i.radio", i);
-            ifconf.rf_chain = (uint32_t)json_object_dotget_number(conf, param_name);
-            sprintf(param_name, "chan_multiSF_%i.if", i);
-            ifconf.freq_hz = (int32_t)json_object_dotget_number(conf, param_name);
             // TODO: handle individual SF enabling and disabling (spread_factor)
-            MSG("INFO: LoRa multi-SF channel %i enabled, radio %i selected, IF %i Hz, 125 kHz bandwidth, SF 7 to 12\n", i, ifconf.rf_chain, ifconf.freq_hz);
+            MSG("INFO: LoRa multi-SF channel %i enabled, radio %i selected, IF %i Hz, 125 kHz bandwidth, SF 7 to 12\n", i, ifconf[i].rf_chain, ifconf[i].freq_hz);
         }
         /* all parameters parsed, submitting configuration to the HAL */
-        if (lgw_rxif_setconf(i, ifconf) != LGW_HAL_SUCCESS) {
+        if (lgw_rxif_setconf(i, ifconf[i]) != LGW_HAL_SUCCESS) {
             MSG("ERROR: invalid configuration for Lora multi-SF channel %i\n", i);
             return -1;
         }
     }
 
     /* set configuration for LoRa standard channel */
-    memset(&ifconf, 0, sizeof(ifconf)); /* initialize configuration structure */
-    val = json_object_get_value(conf, "chan_Lora_std"); /* fetch value (if possible) */
-    if (json_value_get_type(val) != JSONObject) {
-        MSG("INFO: no configuration for LoRa standard channel\n");
-    } else {
-        val = json_object_dotget_value(conf, "chan_Lora_std.enable");
-        if (json_value_get_type(val) == JSONBoolean) {
-            ifconf.enable = (bool)json_value_get_boolean(val);
-        } else {
-            ifconf.enable = false;
+    if (ifconf[8].enable == false) {
+        MSG("INFO: LoRa standard channel %i disabled\n", i);
+    } else  {
+        switch(ifconf[8].bandwidth) {
+            case BW_500KHZ: bw=500000; break;
+            case BW_250KHZ: bw=250000; break;
+            case BW_125KHZ: bw=125000; break;
+            default: bw=0;
         }
-        if (ifconf.enable == false) {
-            MSG("INFO: LoRa standard channel %i disabled\n", i);
-        } else  {
-            ifconf.rf_chain = (uint32_t)json_object_dotget_number(conf, "chan_Lora_std.radio");
-            ifconf.freq_hz = (int32_t)json_object_dotget_number(conf, "chan_Lora_std.if");
-            bw = (uint32_t)json_object_dotget_number(conf, "chan_Lora_std.bandwidth");
-            switch(bw) {
-                case 500000: ifconf.bandwidth = BW_500KHZ; break;
-                case 250000: ifconf.bandwidth = BW_250KHZ; break;
-                case 125000: ifconf.bandwidth = BW_125KHZ; break;
-                default: ifconf.bandwidth = BW_UNDEFINED;
-            }
-            sf = (uint32_t)json_object_dotget_number(conf, "chan_Lora_std.spread_factor");
-            switch(sf) {
-                case  7: ifconf.datarate = DR_LORA_SF7;  break;
-                case  8: ifconf.datarate = DR_LORA_SF8;  break;
-                case  9: ifconf.datarate = DR_LORA_SF9;  break;
-                case 10: ifconf.datarate = DR_LORA_SF10; break;
-                case 11: ifconf.datarate = DR_LORA_SF11; break;
-                case 12: ifconf.datarate = DR_LORA_SF12; break;
-                default: ifconf.datarate = DR_UNDEFINED;
-            }
-            MSG("INFO: LoRa standard channel enabled, radio %i selected, IF %i Hz, %u Hz bandwidth, SF %u\n", ifconf.rf_chain, ifconf.freq_hz, bw, sf);
+        switch(ifconf[8].datarate) {
+            case  DR_LORA_SF7: sf=7;  break;
+            case  DR_LORA_SF8: sf=8;  break;
+            case  DR_LORA_SF9: sf=9;  break;
+            case  DR_LORA_SF10: sf=10; break;
+            case  DR_LORA_SF11: sf=11; break;
+            case  DR_LORA_SF12: sf=12; break;
+            default: sf=0;
         }
-        if (lgw_rxif_setconf(8, ifconf) != LGW_HAL_SUCCESS) {
-            MSG("ERROR: invalid configuration for Lora standard channel\n");
-            return -1;
-        }
+        MSG("INFO: LoRa standard channel enabled, radio %i selected, IF %i Hz, %u Hz bandwidth, SF %u\n", ifconf[i].rf_chain, ifconf[i].freq_hz, bw, sf);
+    }
+    if (lgw_rxif_setconf(8, ifconf[8]) != LGW_HAL_SUCCESS) {
+        MSG("ERROR: invalid configuration for Lora standard channel\n");
+        return -1;
     }
 
     /* set configuration for FSK channel */
-    memset(&ifconf, 0, sizeof(ifconf)); /* initialize configuration structure */
-    val = json_object_get_value(conf, "chan_FSK"); /* fetch value (if possible) */
-    if (json_value_get_type(val) != JSONObject) {
-        MSG("INFO: no configuration for FSK channel\n");
-    } else {
-        val = json_object_dotget_value(conf, "chan_FSK.enable");
-        if (json_value_get_type(val) == JSONBoolean) {
-            ifconf.enable = (bool)json_value_get_boolean(val);
-        } else {
-            ifconf.enable = false;
-        }
-        if (ifconf.enable == false) {
-            MSG("INFO: FSK channel %i disabled\n", i);
-        } else  {
-            ifconf.rf_chain = (uint32_t)json_object_dotget_number(conf, "chan_FSK.radio");
-            ifconf.freq_hz = (int32_t)json_object_dotget_number(conf, "chan_FSK.if");
-            bw = (uint32_t)json_object_dotget_number(conf, "chan_FSK.bandwidth");
-            if      (bw <= 7800)   ifconf.bandwidth = BW_7K8HZ;
-            else if (bw <= 15600)  ifconf.bandwidth = BW_15K6HZ;
-            else if (bw <= 31200)  ifconf.bandwidth = BW_31K2HZ;
-            else if (bw <= 62500)  ifconf.bandwidth = BW_62K5HZ;
-            else if (bw <= 125000) ifconf.bandwidth = BW_125KHZ;
-            else if (bw <= 250000) ifconf.bandwidth = BW_250KHZ;
-            else if (bw <= 500000) ifconf.bandwidth = BW_500KHZ;
-            else ifconf.bandwidth = BW_UNDEFINED;
-            ifconf.datarate = (uint32_t)json_object_dotget_number(conf, "chan_FSK.datarate");
-            MSG("INFO: FSK channel enabled, radio %i selected, IF %i Hz, %u Hz bandwidth, %u bps datarate\n", ifconf.rf_chain, ifconf.freq_hz, bw, ifconf.datarate);
-        }
-        if (lgw_rxif_setconf(9, ifconf) != LGW_HAL_SUCCESS) {
-            MSG("ERROR: invalid configuration for FSK channel\n");
-            return -1;
-        }
+    if (ifconf[9].enable == false) {
+        MSG("INFO: FSK channel %i disabled\n", i);
+    } else  {
+        switch(ifconf[9].bandwidth) {
+            case  BW_7K8HZ: bw = 7800;  break;
+            case  BW_15K6HZ: bw = 15600;  break;
+            case  BW_31K2HZ: bw = 31200;  break;
+            case  BW_62K5HZ: bw = 62500; break;
+            case  BW_125KHZ: bw = 125000; break;
+            case  BW_250KHZ: bw = 250000; break;
+            case  BW_500KHZ: bw = 500000; break;
+            default: bw = 0;
+
+        MSG("INFO: FSK channel enabled, radio %i selected, IF %i Hz, %u Hz bandwidth, %u bps datarate\n", ifconf[9].rf_chain, ifconf[9].freq_hz, bw, ifconf[9].datarate);
     }
-    json_value_free(root_val);
+    if (lgw_rxif_setconf(9, ifconf[9]) != LGW_HAL_SUCCESS) {
+        MSG("ERROR: invalid configuration for FSK channel\n");
+        return -1;
+    }
     return 0;
 }
