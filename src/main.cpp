@@ -43,8 +43,6 @@
 #include "loragw_reg.h"
 #include "loragw_aux.h"
 
-#include "cal_fw.var" /* external definition of the variable */
-
 /* -------------------------------------------------------------------------- */
 /* --- MACROS PRIVADAS ------------------------------------------------------- */
 char dbug_msg[100];
@@ -101,29 +99,23 @@ struct timespec fetch_time;
 char fetch_timestamp[30];
 struct tm * x;
 
+/* -------------------------------------------------------------------------- */
+/* --- DECLARACIÓN DE TAREAS ------------------------------------------------ */
+void Configure_gateway(void * parameter);
 
 void setup() {
-    int i;                              //Variables para loops y temporales
+    
     Serial.begin(115200);               //Iniciamos la comunicación serial para debugeo
-    
-    parse_SX1301_configuration();       //Subimos las configuraciones de canal
+    delay (1000);
 
-    lgwm=parse_gateway_configuration();   //Obtenemos el ID del gateway
-
-    configure_TxGainLUT();       //Configuramos las ganancias de transmisión
-
-    i = lgw_start();
-
-    
-    if (i == LGW_HAL_SUCCESS) {
-        MSG("INFO: concentrator started, packet can now be received\n");
-    } else {
-        MSG("ERROR: failed to start the concentrator\n");
-        STOP_EXECUTION;
-    }
-
-    /* transform the MAC address into a string */
-    sprintf(lgwm_str, "%08X%08X", (uint32_t)(lgwm >> 32), (uint32_t)(lgwm & 0xFFFFFFFF));
+    xTaskCreate(
+            Configure_gateway,          // Function that should be called
+            "Configure Gateway",        // Name of the task (for debugging)
+            16000,                      // Stack size (bytes)
+            NULL,                       // Parameter to pass
+            1,                          // Task priority
+            NULL                        // Task handle
+    );
   
     /* opening log file*/
     time(&now_time);
@@ -213,4 +205,28 @@ void loop() {
         printf("\n");
     }
 
+}
+
+void Configure_gateway(void * parameter){
+    int i;                              //Variables para loops y temporales
+    parse_SX1301_configuration();       //Subimos las configuraciones de canal
+
+    lgwm=parse_gateway_configuration();   //Obtenemos el ID del gateway
+
+    configure_TxGainLUT();       //Configuramos las ganancias de transmisión
+
+    i = lgw_start();
+
+    
+    if (i == LGW_HAL_SUCCESS) {
+        MSG("INFO: concentrator started, packet can now be received\n");
+    } else {
+        MSG("ERROR: failed to start the concentrator\n");
+        STOP_EXECUTION;
+    }
+
+    /* transform the MAC address into a string */
+    sprintf(lgwm_str, "%08X%08X", (uint32_t)(lgwm >> 32), (uint32_t)(lgwm & 0xFFFFFFFF));
+
+    vTaskDelete(NULL);
 }

@@ -192,7 +192,7 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
     int reg_sel;
     uint8_t fw_check[8192];
     int32_t dummy;
-    Debugeo();
+    
     /* check parameters */
     CHECK_NULL(firmware);
     
@@ -769,10 +769,9 @@ int lgw_start(void) {
     
     cal_cmd |= 0x00; /* Bit 6-7: Board type 0: ref, 1: FPGA, 3: board X */
     cal_time = 2300; /* measured between 2.1 and 2.2 sec, because 1 TX only */
-    Debugeo();
+    
     /* Load the calibration firmware  */
     load_firmware(MCU_AGC, cal_firmware, MCU_AGC_FW_BYTE);
-    
     lgw_reg_w(LGW_FORCE_HOST_RADIO_CTRL, 0); /* gives to AGC MCU the control of the radios */
     lgw_reg_w(LGW_RADIO_SELECT, cal_cmd); /* send calibration configuration word */
     lgw_reg_w(LGW_MCU_RST_1, 0);
@@ -781,6 +780,7 @@ int lgw_start(void) {
     /* Check firmware version */
     lgw_reg_w(LGW_DBG_AGC_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_AGC_MCU_RAM_DATA, &read_val);
+    
     fw_version = (uint8_t)read_val;
     if (fw_version != FW_VERSION_CAL) {
         printf("ERROR: Version of calibration firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_CAL);
@@ -964,6 +964,7 @@ int lgw_start(void) {
     lgw_reg_w(LGW_DBG_AGC_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_AGC_MCU_RAM_DATA, &read_val);
     fw_version = (uint8_t)read_val;
+
     if (fw_version != FW_VERSION_AGC) {
         DEBUG_PRINTF("ERROR: Version of AGC firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_AGC);
         return LGW_HAL_ERROR;
