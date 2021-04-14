@@ -1,13 +1,26 @@
-#include "loragw_hal.h"
+#include <arduino.h>   /* delay */
+
+/* -------------------------------------------------------------------------- */
+/* --- DECLARACIONES DE FUNCIONES PRIVADAS ---------------------------------- */
+
+/**
+@brief Configura los canales a usar y el BW y SF para el ccaso del canal 9
+*/
+int parse_SX1301_configuration(void);
+
+/**
+@brief Adquiere el ID del gateway
+@return El valor del ID en entero
+*/
+unsigned long long parse_gateway_configuration(void);
+
+/**
+@brief Configura las ganancias disponibles para la transmisión de mensaje
+*/
+void configure_TxGainLUT(void);
+
+/* -------------------------------------------------------------------------- */
+/* --- DECLARACIONES DE FUNCIONES PRIVADAS ---------------------------------- */
 
 
 
-
-
-/*extern lgw_conf_board_s boardconf;
-
-extern lgw_conf_rxrf_s rfconf[2];
-
-extern lgw_conf_rxif_s ifconf[10];
-
-extern lgw_tx_gain_lut_s txgain_lut;*/

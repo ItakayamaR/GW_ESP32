@@ -401,7 +401,7 @@ static int lgw_regpage = -1; /*! keep the value of the register page selected */
 /* -------------------------------------------------------------------------- */
 /* --- INTERNAL SHARED VARIABLES -------------------------------------------- */
 
-SPIClass* lgw_spi_target = NULL; /*! generic pointer to the SPI device */
+SPIClass* lgw_spi_target=NULL; /*! generic pointer to the SPI device */
 uint8_t lgw_spi_mux_mode = 0; /*! current SPI mux mode used */
 
 /* -------------------------------------------------------------------------- */
@@ -506,12 +506,14 @@ int lgw_connect(bool spi_only) {
         lgw_spi_close(lgw_spi_target);
     }
 
+
     /* open the SPI link */
-    spi_stat = lgw_spi_open(lgw_spi_target);
+    spi_stat = lgw_spi_open(&lgw_spi_target);
     if (spi_stat != LGW_SPI_SUCCESS) {
         DEBUG_MSG("ERROR CONNECTING CONCENTRATOR\n");
         return LGW_REG_ERROR;
     }
+    
 
     if (spi_only == false ) {
         /* check SX1301 version */

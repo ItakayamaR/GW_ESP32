@@ -1,27 +1,29 @@
+#include <stdio.h>
+
 #include "loragw_hal.h"
 #include "loragw_conf.h"
 
+
 /* -------------------------------------------------------------------------- */
 /* --- MACROS PRIVADAS ------------------------------------------------------- */
-
-char dbug_msg[100];
-
-#define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
 #define MSG(args...)    {\
-                          memset(dbug_msg, 0, sizeof(dbug_msg));\
-                          sprintf(dbug_msg,"loragw_pkt_logger: " args);\
-                          Serial.print(dbug_msg);\
+                          memset(dibug_msg, 0, sizeof(dibug_msg));\
+                          sprintf(dibug_msg,"loragw_pkt_config: " args);\
+                          Serial.print(dibug_msg);\
                           }
+
 
 /* -------------------------------------------------------------------------- */
 /* --- VARIABLES PRIVADAS ---------------------------------------------------- */
 
-const lgw_conf_board_s boardconf {
+static char gateway_ID[17]= "AA555A0000000101";
+
+static const lgw_conf_board_s boardconf {
     .lorawan_public=true,           /*!> Enable ONLY for *public* networks using the LoRa MAC protocol */
     .clksrc=1                       /*!> Index of RF chain which provides clock to concentrator */
 };
 
-const lgw_conf_rxrf_s rfconf[2]  {
+static const lgw_conf_rxrf_s rfconf[2]  {
     {   //radio_0
         .enable=true,                           /*!> enable or disable that RF chain */
         .freq_hz=917200000,                     /*!> center frequency of the radio in Hz */
@@ -38,7 +40,7 @@ const lgw_conf_rxrf_s rfconf[2]  {
     }
 };
 
-const lgw_conf_rxif_s ifconf[10] {
+static const lgw_conf_rxif_s ifconf[10] {
     { //chan_multiSF_0
     .enable=true,                       /*!> enable or disable that IF chain */
     .rf_chain=0,                        /*!> to which RF chain is that IF chain associated */
@@ -91,7 +93,7 @@ const lgw_conf_rxif_s ifconf[10] {
     }
 };
 
-const lgw_tx_gain_lut_s txgain_lut = {
+static lgw_tx_gain_lut_s txgain_lut = {
     {{
         .dig_gain = 0,
         .pa_gain = 0,
@@ -130,16 +132,15 @@ const lgw_tx_gain_lut_s txgain_lut = {
     .size = 5,
 };
 
+char dibug_msg[100];
+
 /* -------------------------------------------------------------------------- */
 /* --- FUNCIONES PRIVADAS --------------------------------------------------- */
 
-int parse_SX1301_configuration(const char * conf_file) {
+int parse_SX1301_configuration(void) {
     int i;
-    const char conf_obj[] = "SX1301_conf";
     char param_name[32]; /* used to generate variable parameter names */
-    const char *str; /* used to store string value from JSON object */
     uint32_t sf, bw;
-
 
 
     /* set board configuration */
@@ -155,11 +156,11 @@ int parse_SX1301_configuration(const char * conf_file) {
             MSG("INFO: radio %i disabled\n", i); 
         } else  { /* radio enabled, will parse the other parameters */
             if (rfconf[i].type == LGW_RADIO_TYPE_SX1255) {
-                snprintf(param_name, sizeof param_name, "SX1255", i);
+                snprintf(param_name, sizeof param_name, "SX1255");
             } else if (rfconf[i].type == LGW_RADIO_TYPE_SX1257) {
-                snprintf(param_name, sizeof param_name, "SX1257", i);
+                snprintf(param_name, sizeof param_name, "SX1257");
             } else {
-                MSG("WARNING: invalid radio type: %s (should be SX1255 or SX1257)\n", str);
+                MSG("WARNING: invalid radio type (should be SX1255 or SX1257)\n");
             }
             MSG("INFO: radio %i enabled (type %s), center frequency %u, RSSI offset %f, tx enabled %d\n", i, param_name, rfconf[i].freq_hz, rfconf[i].rssi_offset, rfconf[i].tx_enable);
         }
@@ -214,7 +215,7 @@ int parse_SX1301_configuration(const char * conf_file) {
 
     /* set configuration for FSK channel */
     if (ifconf[9].enable == false) {
-        MSG("INFO: FSK channel %i disabled\n", i);
+        MSG("INFO: FSK channel 9 disabled\n");
     } else  {
         switch(ifconf[9].bandwidth) {
             case  BW_7K8HZ: bw = 7800;  break;
@@ -225,7 +226,7 @@ int parse_SX1301_configuration(const char * conf_file) {
             case  BW_250KHZ: bw = 250000; break;
             case  BW_500KHZ: bw = 500000; break;
             default: bw = 0;
-
+        }
         MSG("INFO: FSK channel enabled, radio %i selected, IF %i Hz, %u Hz bandwidth, %u bps datarate\n", ifconf[9].rf_chain, ifconf[9].freq_hz, bw, ifconf[9].datarate);
     }
     if (lgw_rxif_setconf(9, ifconf[9]) != LGW_HAL_SUCCESS) {
@@ -233,4 +234,20 @@ int parse_SX1301_configuration(const char * conf_file) {
         return -1;
     }
     return 0;
+}
+
+unsigned long long parse_gateway_configuration(void) {
+   unsigned long long  lgw;
+
+    if (gateway_ID != NULL) {
+        sscanf(gateway_ID, "%llx", &lgw);
+        MSG("INFO: gateway MAC address is configured to %016llX\n", lgw);
+    }
+
+    return lgw;
+}
+
+
+void configure_TxGainLUT(void){
+    lgw_txgain_setconf(&txgain_lut);
 }

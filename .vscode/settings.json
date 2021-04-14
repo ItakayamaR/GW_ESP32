@@ -7,6 +7,9 @@
         "loragw_spi.h": "c",
         "spi.h": "c",
         "ctype.h": "c",
-        "random": "cpp"
+        "random": "cpp",
+        "config.h": "c",
+        "*.tcc": "cpp",
+        "cmath": "cpp"
     }
 }

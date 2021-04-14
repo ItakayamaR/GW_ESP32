@@ -83,11 +83,11 @@ int _mosi=LORA_DEFAULT_MOSI_PIN;
 /* --- PUBLIC FUNCTIONS DEFINITION ------------------------------------------ */
 
 /* SPI initialization and configuration */
-int lgw_spi_open(SPIClass* spi_target_ptr) {
+int lgw_spi_open(SPIClass** spi_target_ptr) {
     // setup pins
     pinMode(_ss, OUTPUT);
     digitalWrite(_ss, HIGH);
-
+    
     if (_reset!= -1) {
         pinMode(_reset, OUTPUT);
         // perform reset
@@ -95,11 +95,19 @@ int lgw_spi_open(SPIClass* spi_target_ptr) {
         delay(10);
         digitalWrite(_reset, LOW);
     }
+    
+    //puntero hacia el spi del sistema
+    *spi_target_ptr=&LORA_DEFAULT_SPI;
 
     // start SPI
-    spi_target_ptr->begin(_sck, _miso, _mosi);
+    (*spi_target_ptr)->begin(_sck, _miso, _mosi);
 
-    if (spi_target_ptr == NULL) {
+    Serial.println("hahs");
+    Serial.println("");
+    Serial.println("");
+    delay(3000);
+
+    if (*spi_target_ptr == NULL) {
         DEBUG_PRINTF("ERROR: failed to open SPI device %s\n", SPI_DEV_PATH);
         return LGW_SPI_ERROR;
     }
