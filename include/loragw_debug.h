@@ -6,8 +6,19 @@
 #include <arduino.h>   /* delay */
 
 #define DEBUG_AUX 1
-#define DEBUG_SPI 1
+#define DEBUG_SPI 0
 #define DEBUG_REG 1
 #define DEBUG_HAL 1
 
+/* -------------------------------------------------------------------------- */
+/* --- VARIABLES COMPARTIDAS ------------------------------------------------ */
 static char debug_msg[100];
+
+
+/* -------------------------------------------------------------------------- */
+/* --- DECLARACIÓN DE FUNCIONES PUBLICAS ------------------------------------ */
+
+/* Poner esta función en los puntos donde quieras pausar el código */
+void Debugeo(void);
+
+

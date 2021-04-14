@@ -10,6 +10,7 @@
         "random": "cpp",
         "config.h": "c",
         "*.tcc": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "*.var": "cpp"
     }
 }

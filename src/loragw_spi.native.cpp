@@ -102,10 +102,6 @@ int lgw_spi_open(SPIClass** spi_target_ptr) {
     // start SPI
     (*spi_target_ptr)->begin(_sck, _miso, _mosi);
 
-    Serial.println("hahs");
-    Serial.println("");
-    Serial.println("");
-    delay(3000);
 
     if (*spi_target_ptr == NULL) {
         DEBUG_PRINTF("ERROR: failed to open SPI device %s\n", SPI_DEV_PATH);
@@ -180,18 +176,19 @@ int lgw_spi_r(SPIClass *spi_target, uint8_t spi_mux_mode, uint8_t spi_mux_target
 
     spi_target->beginTransaction(_spiSettings);
     spi_target->transfer(READ_ACCESS | (address & 0x7F));
-    a=spi_target->transfer(0);
+    a=spi_target->transfer(0xFF);
     spi_target->endTransaction();
 
     digitalWrite(_ss, HIGH);
 
+    //Serial.println(a);
     /* determine return code */
     if (a > 256) {
         DEBUG_MSG("ERROR: SPI WRITE FAILURE\n");
         return LGW_SPI_ERROR;
     } else {
         DEBUG_MSG("Note: SPI write success\n");
-        data= (uint8_t*)&a;
+        (*data)= a;
         return LGW_SPI_SUCCESS;
     }
 }

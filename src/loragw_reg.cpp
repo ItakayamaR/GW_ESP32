@@ -513,7 +513,7 @@ int lgw_connect(bool spi_only) {
         DEBUG_MSG("ERROR CONNECTING CONCENTRATOR\n");
         return LGW_REG_ERROR;
     }
-    
+
 
     if (spi_only == false ) {
         /* check SX1301 version */
@@ -522,6 +522,7 @@ int lgw_connect(bool spi_only) {
             DEBUG_MSG("ERROR READING CHIP VERSION REGISTER\n");
             return LGW_REG_ERROR;
         }
+        //Serial.println(u);
         if (u != loregs[LGW_VERSION].dflt && u != 35) {
             DEBUG_PRINTF("ERROR: NOT EXPECTED CHIP VERSION (v%u)\n", u);
             return LGW_REG_ERROR;

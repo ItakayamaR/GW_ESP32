@@ -192,9 +192,10 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
     int reg_sel;
     uint8_t fw_check[8192];
     int32_t dummy;
-
+    Debugeo();
     /* check parameters */
     CHECK_NULL(firmware);
+    
     if (target == MCU_ARB) {
         if (size != MCU_ARB_FW_BYTE) {
             DEBUG_MSG("ERROR: NOT A VALID SIZE FOR MCU ARG FIRMWARE\n");
@@ -213,7 +214,7 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
         DEBUG_MSG("ERROR: NOT A VALID TARGET FOR LOADING FIRMWARE\n");
         return -1;
     }
-
+    
     /* reset the targeted MCU */
     lgw_reg_w(reg_rst, 1);
 
@@ -697,7 +698,6 @@ int lgw_start(void) {
         DEBUG_MSG("Note: LoRa concentrator already started, restarting it now\n");
     }
 
-    
     reg_stat = lgw_connect(false);
     if (reg_stat == LGW_REG_ERROR) {
         DEBUG_MSG("ERROR: FAIL TO CONNECT BOARD\n");
@@ -754,7 +754,7 @@ int lgw_start(void) {
     cal_cmd |= (rf_enable[0] && rf_tx_enable[0]) ? 0x04 : 0x00; /* Bit 2: Calibrate Tx DC offset on radio A */
     cal_cmd |= (rf_enable[1] && rf_tx_enable[1]) ? 0x08 : 0x00; /* Bit 3: Calibrate Tx DC offset on radio B */
     cal_cmd |= 0x10; /* Bit 4: 0: calibrate with DAC gain=2, 1: with DAC gain=3 (use 3) */
-
+    
     switch (rf_radio_type[0]) { /* we assume that there is only one radio type on the board */
         case LGW_RADIO_TYPE_SX1255:
             cal_cmd |= 0x20; /* Bit 5: 0: SX1257, 1: SX1255 */
@@ -766,16 +766,18 @@ int lgw_start(void) {
             DEBUG_PRINTF("ERROR: UNEXPECTED VALUE %d FOR RADIO TYPE\n", rf_radio_type[0]);
             break;
     }
-
+    
     cal_cmd |= 0x00; /* Bit 6-7: Board type 0: ref, 1: FPGA, 3: board X */
     cal_time = 2300; /* measured between 2.1 and 2.2 sec, because 1 TX only */
-
+    Debugeo();
     /* Load the calibration firmware  */
     load_firmware(MCU_AGC, cal_firmware, MCU_AGC_FW_BYTE);
+    
     lgw_reg_w(LGW_FORCE_HOST_RADIO_CTRL, 0); /* gives to AGC MCU the control of the radios */
     lgw_reg_w(LGW_RADIO_SELECT, cal_cmd); /* send calibration configuration word */
     lgw_reg_w(LGW_MCU_RST_1, 0);
 
+    
     /* Check firmware version */
     lgw_reg_w(LGW_DBG_AGC_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_AGC_MCU_RAM_DATA, &read_val);

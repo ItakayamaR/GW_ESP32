@@ -43,6 +43,8 @@
 #include "loragw_reg.h"
 #include "loragw_aux.h"
 
+#include "cal_fw.var" /* external definition of the variable */
+
 /* -------------------------------------------------------------------------- */
 /* --- MACROS PRIVADAS ------------------------------------------------------- */
 char dbug_msg[100];
@@ -111,6 +113,7 @@ void setup() {
     configure_TxGainLUT();       //Configuramos las ganancias de transmisión
 
     i = lgw_start();
+
     
     if (i == LGW_HAL_SUCCESS) {
         MSG("INFO: concentrator started, packet can now be received\n");
