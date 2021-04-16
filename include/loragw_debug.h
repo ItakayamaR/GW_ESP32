@@ -5,7 +5,7 @@
 
 #include <arduino.h>   /* delay */
 
-#define DEBUG_AUX 1
+#define DEBUG_AUX 0
 #define DEBUG_SPI 0
 #define DEBUG_REG 1
 #define DEBUG_HAL 1
@@ -20,5 +20,8 @@ static char debug_msg[100];
 
 /* Poner esta función en los puntos donde quieras pausar el código */
 void Debugeo(void);
+
+/* Realiza un reseteo al gateway y reinicia el ESP */
+void Reseteo(void);
 
 

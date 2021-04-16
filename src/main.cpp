@@ -42,6 +42,10 @@
 #include "loragw_hal.h"
 #include "loragw_reg.h"
 #include "loragw_aux.h"
+#include "loragw_debug.h"
+#include "SPIFFS.h"
+
+
 
 /* -------------------------------------------------------------------------- */
 /* --- MACROS PRIVADAS ------------------------------------------------------- */
@@ -51,7 +55,7 @@ char dbug_msg[100];
 #define MSG(args...)                                   \
     {                                                  \
         memset(dbug_msg, 0, sizeof(dbug_msg));         \
-        sprintf(dbug_msg, "loragw_pkt_logger: " args); \
+        sprintf(dbug_msg, "loragw_pkt_main: " args); \
         Serial.print(dbug_msg);                        \
     }
 #define STOP_EXECUTION \
@@ -99,9 +103,15 @@ struct timespec fetch_time;
 char fetch_timestamp[30];
 struct tm *x;
 
+/* Variables para multitarea */
+TaskHandle_t Task1;
+
+
 /* -------------------------------------------------------------------------- */
 /* --- DECLARACIÓN DE TAREAS ------------------------------------------------ */
 void Configure_gateway(void *parameter);
+SemaphoreHandle_t batton;
+
 
 void setup()
 {
@@ -109,23 +119,26 @@ void setup()
     Serial.begin(115200); //Iniciamos la comunicación serial para debugeo
     delay(1000);
 
+    batton = xSemaphoreCreateMutex();    //Creamos el semáforo
+
     xTaskCreate(
         Configure_gateway,   // Function that should be called
         "Configure Gateway", // Name of the task (for debugging)
         16000,               // Stack size (bytes)
         NULL,                // Parameter to pass
         1,                   // Task priority
-        NULL                 // Task handle
+        &Task1                 // Task handle
     );
 
-    /* opening log file*/
-    time(&now_time);
+    delay(500);                 // Tiempo para empezar la tarea
+
+    //Serial.println("esto aqui");
 }
 
 void loop()
 {
-    int i; //Variables para loops y temporales
-    uint8_t status_var;
+    xSemaphoreTake(batton, portMAX_DELAY);
+    int i,j; //Variables para loops y temporales
 
     /* fetch packets */
     nb_pkt = lgw_receive(ARRAY_SIZE(rxpkt), rxpkt);
@@ -184,47 +197,22 @@ void loop()
         txpkt.count_us = p->count_us + wait_time;
 
         //Empezamos a escribir en el registro los datos
+        MSG("Message recorded: ");
+        for (j = 0; j < p->size; ++j) {
+            Serial.print((char)p->payload[j]);
+        }
+        Serial.println("\n");
 
         /* Si es que se ha recibido un mensaje con CRC correcto */
-        if (p->status == STAT_CRC_OK)
-        {
-            /* Enviamos el mensaje de confirmacion */
-            MSG("Sending OK\n");
-            i = lgw_send(txpkt); /* non-blocking scheduling of TX packet */
-            if (i == LGW_HAL_ERROR)
-            {
-                printf("ERROR\n");
-                STOP_EXECUTION;
-            }
-            else
-            {
-                /* wait for packet to finish sending */
-                i = 0;
-                do
-                {
-                    wait_ms(5);
-                    i++;
-                    lgw_status(TX_STATUS, &status_var); /* get TX status */
-                    //printf("enviando\n");
-                } while (status_var != TX_FREE && i < 1000);
-                if (i == 5000)
-                {
-                    printf("Error al enviar mensaje de confirmación\n");
-                }
-                else
-                {
-                    printf("Se envió mensaje de confirmación\n");
-                }
-            }
-        }
-        else
-            printf("CRC malo, no se enviará mensaje de confirmación\n");
-        printf("\n");
+       
     }
+    xSemaphoreGive(batton);
 }
 
 void Configure_gateway(void *parameter)
 {
+    xSemaphoreTake(batton, portMAX_DELAY);
+
     int i;                        //Variables para loops y temporales
     parse_SX1301_configuration(); //Subimos las configuraciones de canal
 
@@ -241,11 +229,16 @@ void Configure_gateway(void *parameter)
     else
     {
         MSG("ERROR: failed to start the concentrator\n");
+        Reseteo();
         STOP_EXECUTION;
     }
 
     /* transform the MAC address into a string */
     sprintf(lgwm_str, "%08X%08X", (uint32_t)(lgwm >> 32), (uint32_t)(lgwm & 0xFFFFFFFF));
+
+    /* opening log file*/
+    time(&now_time);
+    xSemaphoreGive (batton);
 
     vTaskDelete(NULL);
 }

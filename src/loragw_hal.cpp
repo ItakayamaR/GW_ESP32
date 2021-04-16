@@ -221,13 +221,14 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
     /* set mux to access MCU program RAM and set address to 0 */
     lgw_reg_w(reg_sel, 0);
     lgw_reg_w(LGW_MCU_PROM_ADDR, 0);
-
+  
     /* write the program in one burst */
     lgw_reg_wb(LGW_MCU_PROM_DATA, firmware, size);
 
     /* Read back firmware code for check */
     lgw_reg_r( LGW_MCU_PROM_DATA, &dummy ); /* bug workaround */
     lgw_reg_rb( LGW_MCU_PROM_DATA, fw_check, size );
+
     if (memcmp(firmware, fw_check, size) != 0) {
         printf ("ERROR: Failed to load fw %d\n", (int)target);
         return -1;
