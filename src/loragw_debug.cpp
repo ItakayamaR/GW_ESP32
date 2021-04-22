@@ -25,7 +25,7 @@ void Reseteo(void){
     digitalWrite(RESET_PIN, HIGH);
     delay(1000);
     digitalWrite(RESET_PIN, LOW);
-    delay(100);
+    delay(500);
     
     ESP.restart();
 }

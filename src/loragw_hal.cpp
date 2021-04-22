@@ -968,14 +968,14 @@ int lgw_start(void) {
 
     if (fw_version != FW_VERSION_AGC) {
         DEBUG_PRINTF("ERROR: Version of AGC firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_AGC);
-        return LGW_HAL_ERROR;
+        //return LGW_HAL_ERROR;
     }
     lgw_reg_w(LGW_DBG_ARB_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_ARB_MCU_RAM_DATA, &read_val);
     fw_version = (uint8_t)read_val;
     if (fw_version != FW_VERSION_ARB) {
         DEBUG_PRINTF("ERROR: Version of arbiter firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_ARB);
-        return LGW_HAL_ERROR;
+        //return LGW_HAL_ERROR;
     }
 
     DEBUG_MSG("Info: Initialising AGC firmware...\n");
@@ -1482,6 +1482,7 @@ int lgw_send(struct lgw_pkt_tx_s pkt_data) {
         }
         if (pkt_data.invert_pol == true) {
             buff[11] |= 0x10; /* set 'TX polarity' bit at 1 */
+            //Debugeo();
         }
 
         /* metadata 12 & 13, LoRa preamble size */

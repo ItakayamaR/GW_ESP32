@@ -43,7 +43,7 @@
 #include "loragw_reg.h"
 #include "loragw_aux.h"
 #include "loragw_debug.h"
-#include "SPIFFS.h"
+
 
 
 
@@ -69,6 +69,8 @@ char dbug_msg[100];
 
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE VARIABLES (GLOBAL) ------------------------------------------- */
+uint8_t status_var;
+
 uint64_t lgwm = 0; /* LoRa gateway MAC address */
 char lgwm_str[17];
 
@@ -139,7 +141,7 @@ void loop()
 {
     xSemaphoreTake(batton, portMAX_DELAY);
     int i,j; //Variables para loops y temporales
-
+    //Serial.println("A");
     /* fetch packets */
     nb_pkt = lgw_receive(ARRAY_SIZE(rxpkt), rxpkt);
     if (nb_pkt == LGW_HAL_ERROR)
@@ -204,7 +206,30 @@ void loop()
         Serial.println("\n");
 
         /* Si es que se ha recibido un mensaje con CRC correcto */
-       
+        if (p->status == STAT_CRC_OK) {
+            /* Enviamos el mensaje de confirmacion */
+            MSG("Sending OK\n");
+            i = lgw_send(txpkt); /* non-blocking scheduling of TX packet */
+            if (i == LGW_HAL_ERROR) {
+                printf("ERROR\n");
+                STOP_EXECUTION;
+            } else {
+                /* wait for packet to finish sending */
+                i=0;
+                do {
+                    wait_ms(5);
+                    i++;
+                    lgw_status(TX_STATUS, &status_var); /* get TX status */
+                    //printf("enviando\n");
+                } while (status_var != TX_FREE && i<1000);
+                if (i==5000){
+                    printf("Error al enviar mensaje de confirmación\n");
+                } else  {
+                    printf("Se envió mensaje de confirmación\n");
+                }
+                
+            }
+        }
     }
     xSemaphoreGive(batton);
 }
@@ -230,7 +255,6 @@ void Configure_gateway(void *parameter)
     {
         MSG("ERROR: failed to start the concentrator\n");
         Reseteo();
-        STOP_EXECUTION;
     }
 
     /* transform the MAC address into a string */
