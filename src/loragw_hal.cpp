@@ -192,7 +192,7 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
     int reg_sel;
     uint8_t fw_check[8192];
     int32_t dummy;
-    Debugeo();
+    
     /* check parameters */
     CHECK_NULL(firmware);
     
@@ -221,13 +221,14 @@ int load_firmware(uint8_t target, uint8_t *firmware, uint16_t size) {
     /* set mux to access MCU program RAM and set address to 0 */
     lgw_reg_w(reg_sel, 0);
     lgw_reg_w(LGW_MCU_PROM_ADDR, 0);
-
+  
     /* write the program in one burst */
     lgw_reg_wb(LGW_MCU_PROM_DATA, firmware, size);
 
     /* Read back firmware code for check */
     lgw_reg_r( LGW_MCU_PROM_DATA, &dummy ); /* bug workaround */
     lgw_reg_rb( LGW_MCU_PROM_DATA, fw_check, size );
+
     if (memcmp(firmware, fw_check, size) != 0) {
         printf ("ERROR: Failed to load fw %d\n", (int)target);
         return -1;
@@ -769,10 +770,9 @@ int lgw_start(void) {
     
     cal_cmd |= 0x00; /* Bit 6-7: Board type 0: ref, 1: FPGA, 3: board X */
     cal_time = 2300; /* measured between 2.1 and 2.2 sec, because 1 TX only */
-    Debugeo();
+    
     /* Load the calibration firmware  */
     load_firmware(MCU_AGC, cal_firmware, MCU_AGC_FW_BYTE);
-    
     lgw_reg_w(LGW_FORCE_HOST_RADIO_CTRL, 0); /* gives to AGC MCU the control of the radios */
     lgw_reg_w(LGW_RADIO_SELECT, cal_cmd); /* send calibration configuration word */
     lgw_reg_w(LGW_MCU_RST_1, 0);
@@ -781,6 +781,7 @@ int lgw_start(void) {
     /* Check firmware version */
     lgw_reg_w(LGW_DBG_AGC_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_AGC_MCU_RAM_DATA, &read_val);
+    
     fw_version = (uint8_t)read_val;
     if (fw_version != FW_VERSION_CAL) {
         printf("ERROR: Version of calibration firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_CAL);
@@ -964,16 +965,17 @@ int lgw_start(void) {
     lgw_reg_w(LGW_DBG_AGC_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_AGC_MCU_RAM_DATA, &read_val);
     fw_version = (uint8_t)read_val;
+
     if (fw_version != FW_VERSION_AGC) {
         DEBUG_PRINTF("ERROR: Version of AGC firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_AGC);
-        return LGW_HAL_ERROR;
+        //return LGW_HAL_ERROR;
     }
     lgw_reg_w(LGW_DBG_ARB_MCU_RAM_ADDR, FW_VERSION_ADDR);
     lgw_reg_r(LGW_DBG_ARB_MCU_RAM_DATA, &read_val);
     fw_version = (uint8_t)read_val;
     if (fw_version != FW_VERSION_ARB) {
         DEBUG_PRINTF("ERROR: Version of arbiter firmware not expected, actual:%d expected:%d\n", fw_version, FW_VERSION_ARB);
-        return LGW_HAL_ERROR;
+        //return LGW_HAL_ERROR;
     }
 
     DEBUG_MSG("Info: Initialising AGC firmware...\n");
@@ -1480,6 +1482,7 @@ int lgw_send(struct lgw_pkt_tx_s pkt_data) {
         }
         if (pkt_data.invert_pol == true) {
             buff[11] |= 0x10; /* set 'TX polarity' bit at 1 */
+            //Debugeo();
         }
 
         /* metadata 12 & 13, LoRa preamble size */
