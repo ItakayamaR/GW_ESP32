@@ -94,7 +94,8 @@ int lgw_spi_open(SPIClass** spi_target_ptr) {
         digitalWrite(_reset, HIGH);
         delay(100);
         digitalWrite(_reset, LOW);
-        delay(100);
+        delay(1000);
+        pinMode(_reset, INPUT);
     }
     
     //puntero hacia el spi del sistema

@@ -5,7 +5,7 @@
 #include "loragw_debug.h"   
 
 
-#define RESET_PIN     17
+#define RESET_PIN     22
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 

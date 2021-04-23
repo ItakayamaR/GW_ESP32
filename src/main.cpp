@@ -141,6 +141,7 @@ void loop()
 {
     xSemaphoreTake(batton, portMAX_DELAY);
     int i,j; //Variables para loops y temporales
+    uint32_t time; 
     //Serial.println("A");
     /* fetch packets */
     nb_pkt = lgw_receive(ARRAY_SIZE(rxpkt), rxpkt);
@@ -161,8 +162,25 @@ void loop()
     /* log packets */
     for (i = 0; i < nb_pkt; ++i)
     {
-        p = &rxpkt[i];
+        if (txpkt.count_us != 0) time=txpkt.count_us;
+        else time=1;
 
+        p = &rxpkt[i];
+        
+        if ((p->count_us - time) == (uint32_t)57840 ) {
+            Serial.println("Mensaje de ok reflejo");
+            continue;
+        } else if (p->count_us == time) {
+            Serial.println("Mensaje de recepción reflejo");
+            continue;
+        } else if ((time - p->count_us) > wait_time - 500 && (time - p->count_us) < wait_time + 500 ){
+            Serial.println("Mensaje de ok reflejo (wait_time)");
+            continue;
+        } else {
+            Serial.println(time);
+            Serial.println(p->count_us);
+        }
+        
         /* limpiamos la estructura de transmisión */
         memset(&txpkt, 0, sizeof(txpkt));
 
@@ -207,28 +225,29 @@ void loop()
 
         /* Si es que se ha recibido un mensaje con CRC correcto */
         if (p->status == STAT_CRC_OK) {
+            // Esperamos que el mensaje anterior se termine de mandar
+            j=0; 
+            do {
+                wait_ms(5);
+                j++;
+                lgw_status(TX_STATUS, &status_var); /* get TX status */
+                //printf("enviando\n");
+            } while (status_var != TX_FREE && j<1000);
+            if (j==5000){
+                MSG("Error al enviar mensaje de confirmación, tiempo de espera acabado\n");
+            }
             /* Enviamos el mensaje de confirmacion */
             MSG("Sending OK\n");
-            i = lgw_send(txpkt); /* non-blocking scheduling of TX packet */
-            if (i == LGW_HAL_ERROR) {
-                printf("ERROR\n");
-                STOP_EXECUTION;
+            j = lgw_send(txpkt); 
+            if (j == LGW_HAL_ERROR) {
+                MSG("ERROR\n");
+                Reseteo();
             } else {
                 /* wait for packet to finish sending */
-                i=0;
-                do {
-                    wait_ms(5);
-                    i++;
-                    lgw_status(TX_STATUS, &status_var); /* get TX status */
-                    //printf("enviando\n");
-                } while (status_var != TX_FREE && i<1000);
-                if (i==5000){
-                    printf("Error al enviar mensaje de confirmación\n");
-                } else  {
-                    printf("Se envió mensaje de confirmación\n");
-                }
-                
+                MSG("Se envió mensaje de confirmación\n");
             }
+             
+            Serial.println("");
         }
     }
     xSemaphoreGive(batton);

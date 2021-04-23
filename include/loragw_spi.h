@@ -43,7 +43,7 @@ Maintainer: Sylvain Miermont
 #define LORA_DEFAULT_SPI           SPI
 #define LORA_DEFAULT_SPI_FREQUENCY 8E6 
 #define LORA_DEFAULT_SS_PIN        4
-#define LORA_DEFAULT_RESET_PIN     17
+#define LORA_DEFAULT_RESET_PIN     22
 #define LORA_DEFAULT_SCK_PIN       18
 #define LORA_DEFAULT_MISO_PIN      19
 #define LORA_DEFAULT_MOSI_PIN      23
